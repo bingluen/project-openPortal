@@ -1,4 +1,5 @@
 # coding=UTF-8
+from __future__ import print_function
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -15,7 +16,7 @@ class CourseCatcher:
 		self.requests = requests.Session();
 		self.database = codecs.open("database.sql", "w", "utf-8")
 		self.database.write(u'\ufeff')
-		self.database.write(u'INSERT INTO `coursedatabase` (`id`, `code`, `cname`, `year`, `professor`, `time`) VALUES\r\n')
+		self.database.write(u'INSERT INTO `coursedatabase` (`id`, `code`, `class`, `department`, `degree`, `credit`, `chinese_name`, `chinese_teacherName`, `type`, `url`, `year`, `semester`, `time`) VALUES\r\n')
 		self.eco_viewstate = '';
 		self.eco_eventvalidation = '';
 		self.eco_viewstategenerator = '';
@@ -39,7 +40,7 @@ class CourseCatcher:
 		try:
 			content = self.requests.get(self.url, proxies=proxy).text
 		except requests.exceptions.ConnectionError:
-			print 'Department ' + str(department)
+			print ('Department ' + str(department))
 
 
 		self.eco_viewstate = re.findall('id="__VIEWSTATE" value="([^\r\n]*)" />', content, re.S)[0]
@@ -52,7 +53,7 @@ class CourseCatcher:
 			'__VIEWSTATE': self.eco_viewstate.decode('utf-8'),
 			'__VIEWSTATEGENERATOR': self.eco_viewstategenerator.decode('utf-8'),
 			'__EVENTVALIDATION': self.eco_eventvalidation.decode('utf-8'),
-	        'DDL_YM': catchYear+','+catchSemester+'  ',
+	        'DDL_YM': str(catchYear)+','+str(catchSemester)+'  ',
 	        'DDL_Dept': department,
 	        'DDL_Degree': '0',
 	        'Q': 'RadioButton1',
@@ -65,7 +66,7 @@ class CourseCatcher:
 		try:
 			content = self.requests.post(self.url, data=self.postData, proxies=proxy).text
 		except requests.exceptions.ConnectionError:
-			print 'Department ' + str(department)
+			print ('Department ' + str(department))
 		
 		## 第三次連線
 		self.eco_viewstate = re.findall('id="__VIEWSTATE" value="([^\r\n]*)" />', content, re.S)[0]
@@ -75,7 +76,7 @@ class CourseCatcher:
 			'__VIEWSTATE': self.eco_viewstate.decode('utf-8'),
 			'__VIEWSTATEGENERATOR': self.eco_viewstategenerator.decode('utf-8'),
 			'__EVENTVALIDATION': self.eco_eventvalidation.decode('utf-8'),
-	        'DDL_YM': catchYear+','+catchSemester+'  ',
+	        'DDL_YM': str(catchYear)+','+str(catchSemester)+'  ',
 	        'DDL_Dept': department,
 	        'DDL_Degree': degree,
 	        'Q': 'RadioButton1',
@@ -88,12 +89,12 @@ class CourseCatcher:
 		try:
 			content = self.requests.post(self.url, data=self.postData).text
 		except requests.exceptions.ConnectionError:
-			print 'Department ' + str(department)
+			print ('Department ' + str(department))
 
 		return content
 
-	def parser(self, content):
-		dom = BeautifulSoup(content, 'html.parser')
+	def parserList(self, content, year, semester, department, degree):
+		dom = BeautifulSoup(content, 'lxml')
 		courseList = []
 
 		if dom.find('table', id='Table1').find('td', title='No course was selected') is not None:
@@ -106,34 +107,103 @@ class CourseCatcher:
 				rowData = row.find_all('td')
 				courseData = {}
 				if len(rowData) > 1:
-					courseData['code'] = rowData[1].text
+
+					#Detail URL
+					courseData['url'] = 'https://portal.yzu.edu.tw/cosSelect/'+rowData[1].a['href']
+					
+					#english & chinese name of course
 					courseName = rowData[3].find_all('a')
-					courseData['cname'] = courseName[0].text
-					##courseData['ename'] = courseName[1].text
+					courseData['chinese_name'] = courseName[0].text
+
+					#type
+					courseData['type'] = rowData[4].text
+
+					#class time
 					courseData['time'] = rowData[5].text.replace('        ', ',')
-					courseData['teacher'] = rowData[6].text
-					courseData['year'] = 1041
-					self.writeRow(courseData)
-			except KeyError:
+
+					#teacher name
+					courseData['teacher'] = re.findall('[^()]*', rowData[6].text, re.S)[0]
+
+					#year
+					courseData['year'] = year
+
+					#semester
+					courseData['semester'] = semester
+
+					#department
+					courseData['department'] = department
+
+					#degree
+					courseData['degree'] = degree
+
+					courseList.append(courseData)
+			except KeyError as e:
+				print (e)
 				continue
 
+		return courseList
 
+	def parseCourse(self, courseList):
+		newCourselist = []
+		for course in courseList:
+			try:
+				content = self.requests.get(course['url'], proxies=proxy).text
+			except requests.exceptions.ConnectionError:
+				print ('ConnectionError - Url ' + course['url'])
+
+			dom = BeautifulSoup(content, 'lxml')
+
+			data = dom.find('div', id='Cos_info').table.find_all('tr')[1].find_all('td')
+
+			#code
+			course['code'] = data[2].text.replace(' ', '')
+
+			#class
+			course['class'] = data[3].text
+
+			#credit
+			course['credit'] = int(data[4].text)
+
+			newCourselist.append(course)
+
+		return newCourselist
 	
-	def writeRow(self, row):
-		##'ME108 A', '應用力學靜力', '1032', '何旭川(Shiuh-Chuan Her)', '106, 107, 108'
-		##print type(str(row['time']))
-		##self.database.write(u'(\''+row['code']+u'\','+u'\''+row['cname']+u'\','+u'\''+row['year']+u'\','+u'\''+row['teacher']+u'\','+u'\''+str(row['time'])+u'\'),')
-		self.database.write(u'(')
-		self.database.write(u'\''+row['code']+u'\', ')
-		self.database.write(u'\''+row['cname']+u'\', ')
-		self.database.write(u'\''+str(row['year'])+u'\', ')
-		self.database.write(u'\''+row['teacher']+u'\', ')
-		self.database.write(u'\''+row['time']+u'\'')
-		self.database.write(u'), \r\n')
+	def writeRow(self, courseList):
+		"""
+		(`id`, `code`, `class`, 
+			`department`, `degree`, `credit`, 
+			`chinese_name`, `chinese_teacherName`, `type`, 
+			`url`, `year`, `semester`, 
+			`time`)
+		"""
+		
+		for row in courseList:
+			self.database.write(u'(')
+			self.database.write(u'\''+row['code']+u'\', ')
+			self.database.write(u'\''+row['class']+u'\', ')
+			self.database.write(u'\''+str(row['department'])+u'\', ')
+			self.database.write(u'\''+str(row['degree'])+u'\', ')
+			self.database.write(u'\''+str(row['credit'])+u'\', ')
+			self.database.write(u'\''+row['chinese_name']+u'\', ')
+			self.database.write(u'\''+row['teacher']+u'\', ')
+			self.database.write(u'\''+row['type']+u'\', ')
+			self.database.write(u'\''+row['url']+u'\', ')
+			self.database.write(u'\''+str(row['year'])+u'\', ')
+			self.database.write(u'\''+str(row['semester'])+u'\', ')
+			self.database.write(u'\''+row['time']+u'\'')
+			self.database.write(u'), \r\n')
 
 	def execute(self):
 		for department in self.legalDepartment:
-			self.parser(self.catch('104', '1', department, '0'))
+			for degree in range(1,5):
+				print('catch department = ' + str(department) + ' degree = ' + str(degree), end='')
+				parserList = self.parserList(self.catch(104, 1, department, degree), 104, 1, department, degree)
+				if parserList is not None:
+					self.writeRow(self.parseCourse(parserList))
+					print('.........Finish')
+				else:
+					print('.........Empty')
+
 
 		
 
