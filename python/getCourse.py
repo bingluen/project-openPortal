@@ -16,7 +16,7 @@ class CourseCatcher:
 		self.requests = requests.Session();
 		self.database = codecs.open("database.sql", "w", "utf-8")
 		self.database.write(u'\ufeff')
-		self.database.write(u'INSERT INTO `coursedatabase` (`id`, `code`, `class`, `department`, `degree`, `credit`, `chinese_name`, `chinese_teacherName`, `type`, `url`, `year`, `semester`, `time`) VALUES\r\n')
+		self.database.write(u'INSERT INTO `coursedatabase` (`code`, `class`, `department`, `degree`, `credit`, `chinese_name`, `chinese_teacherName`, `type`, `url`, `year`, `semester`, `time`) VALUES\r\n')
 		self.eco_viewstate = '';
 		self.eco_eventvalidation = '';
 		self.eco_viewstategenerator = '';
