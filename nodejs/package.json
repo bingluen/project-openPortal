@@ -1,0 +1,14 @@
+{
+  "name": "open-portal-nodejs",
+  "version": "1.0.0",
+  "description": "open portal for yzu build by nodejs",
+  "main": "server.js",
+  "scripts": {
+    "test": "node server.js"
+  },
+  "author": "Erickson Juang",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.13.1"
+  }
+}
