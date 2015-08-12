@@ -6,8 +6,6 @@ import re
 import codecs
 
 proxy = {
-	"http": "http://proxy.hinet.net:80",
-	"https": "https://proxy.hinet.net:80"
 }
 
 class CourseCatcher:
@@ -20,28 +18,27 @@ class CourseCatcher:
 		self.eco_viewstate = '';
 		self.eco_eventvalidation = '';
 		self.eco_viewstategenerator = '';
-		self.legalDepartment = [300, 302, 303, 305, 322, 
-			323, 325, 329, 330, 352, 
-			353, 355, 500, 505, 530, 
-			531, 532, 554, 600, 
-			601, 602, 603, 604, 621, 
-			622, 623, 624, 700, 304, 
-			701, 702, 721, 722, 723, 
-			724, 725, 751, 754, 800, 
-			301, 307, 308, 326, 327, 
-			328, 356, 357, 358, 901, 
+		self.legalDepartment = [300, 302, 303, 305, 322,
+			323, 325, 329, 330, 352,
+			353, 355, 500, 505, 530,
+			531, 532, 554, 600,
+			601, 602, 603, 604, 621,
+			622, 623, 624, 700, 304,
+			701, 702, 721, 722, 723,
+			724, 725, 751, 754, 800,
+			301, 307, 308, 326, 327,
+			328, 356, 357, 358, 901,
 			903, 904, 906, 907];
 
 	def __del__(self):
 		self.database.close()
 
 	def catch(self, catchYear, catchSemester, department, degree):
-		## 第一次連線 - 抓環境變數
+		## 第一次連線 - 抓環境變數ß
 		try:
 			content = self.requests.get(self.url, proxies=proxy).text
 		except requests.exceptions.ConnectionError:
 			print ('Department ' + str(department))
-
 
 		self.eco_viewstate = re.findall('id="__VIEWSTATE" value="([^\r\n]*)" />', content, re.S)[0]
 		self.eco_eventvalidation = re.findall('id="__EVENTVALIDATION" value="([^\r\n]*)" ', content, re.S)[0]
@@ -67,7 +64,7 @@ class CourseCatcher:
 			content = self.requests.post(self.url, data=self.postData, proxies=proxy).text
 		except requests.exceptions.ConnectionError:
 			print ('Department ' + str(department))
-		
+
 		## 第三次連線
 		self.eco_viewstate = re.findall('id="__VIEWSTATE" value="([^\r\n]*)" />', content, re.S)[0]
 		self.eco_eventvalidation = re.findall('id="__EVENTVALIDATION" value="([^\r\n]*)" ', content, re.S)[0]
@@ -85,7 +82,7 @@ class CourseCatcher:
 	        '__LASTFOCUS': '',
 	        'Button1': '\xe7\x99\xbb\xe5\x85\xa5'
 		}
-		
+
 		try:
 			content = self.requests.post(self.url, data=self.postData).text
 		except requests.exceptions.ConnectionError:
@@ -110,7 +107,7 @@ class CourseCatcher:
 
 					#Detail URL
 					courseData['url'] = 'https://portal.yzu.edu.tw/cosSelect/'+rowData[1].a['href']
-					
+
 					#english & chinese name of course
 					courseName = rowData[3].find_all('a')
 					courseData['chinese_name'] = courseName[0].text
@@ -167,16 +164,16 @@ class CourseCatcher:
 			newCourselist.append(course)
 
 		return newCourselist
-	
+
 	def writeRow(self, courseList):
 		"""
-		(`id`, `code`, `class`, 
-			`department`, `degree`, `credit`, 
-			`chinese_name`, `chinese_teacherName`, `type`, 
-			`url`, `year`, `semester`, 
+		(`id`, `code`, `class`,
+			`department`, `degree`, `credit`,
+			`chinese_name`, `chinese_teacherName`, `type`,
+			`url`, `year`, `semester`,
 			`time`)
 		"""
-		
+
 		for row in courseList:
 			self.database.write(u'(')
 			self.database.write(u'\''+row['code']+u'\', ')
@@ -205,7 +202,7 @@ class CourseCatcher:
 					print('.........Empty')
 
 
-		
+
 
 courseCatcher = CourseCatcher()
 courseCatcher.execute()
