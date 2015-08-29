@@ -37,3 +37,8 @@ gulp.task('react', function() {
     .pipe(plugins.concat('bundle.js'))
     .pipe(gulp.dest('./public/js/'))
 })
+
+gulp.task('watch', function() {
+  gulp.watch('./sass/**/*.scss', ['style']);
+  gulp.watch(jsxFile, ['react']);
+});
