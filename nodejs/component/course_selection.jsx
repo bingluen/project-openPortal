@@ -33,14 +33,7 @@ var CourseTable = React.createClass({
         ],
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       },
-      rawData:[
-        {
-          courseCode: 'CS112',
-          courseName: 'test',
-          teacherName: 'Master',
-          courseTime: [101, 102]
-        }
-      ],
+      rawData:[],
       needRefresh: true
     })
   },
@@ -94,7 +87,7 @@ var CourseTable = React.createClass({
      */
     fields = this.state.label.days.map(function(currentValue, index) {
       if(index + 1 > this.state.day) return null;
-      return (<th key={index + 1}>{currentValue}</th>)
+      return (<th key={index + 1} className="two wide center aligned">{currentValue}</th>)
     }.bind(this));
     fields.unshift(<th key={0} className="two wide" />)
     thead = (<thead><tr key={0}>{fields}</tr></thead>);
