@@ -19,7 +19,9 @@ var MainContainer = React.createClass({
     return(
       <div id="MainContainer">
         <Navbar />
-        <MainContent />
+        <div className="content">
+          <MainContent />
+        </div>
       </div>
     );
   }
