@@ -32,14 +32,43 @@ var CourseTable = React.createClass({
         '20:30-21:20'
         ],
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      }
+      },
+      rawData:[
+        {
+          courseCode: 'CS112',
+          courseName: 'test',
+          teacherName: 'Master',
+          courseTime: [101, 102]
+        }
+      ],
+      needRefresh: true
     })
   },
   handleDaysChange: function(event) {
-    this.state.day = event
+    if ( !event ) return false;
+    this.setState({day: event});
   },
   handleLessonsChange: function(event) {
-    this.state.row = event
+    if ( !event ) return false;
+    this.setState({row: event});
+  },
+  refreshData: function() {
+    if (!this.state.needRefresh) return;
+    var extendCourse = {}
+    this.state.rawData.map(function(element) {
+      element.courseTime.map(function(value) {
+        extendCourse[Math.floor(value / 100 - 1).toString()] = extendCourse[Math.floor(value / 100 - 1).toString()] || {}
+        extendCourse[Math.floor(value / 100 - 1).toString()][(value % 100 - 1).toString()] = element;
+      });
+    });
+    this.setState({extendData: extendCourse});
+  },
+  componentWillMount: function() {
+    this.refreshData();
+  },
+  componentWillUpdate: function() {
+    this.state.needRefresh = !this.state.needRefresh;
+    this.refreshData();
   },
   render: function() {
     var daysOption = [5, 6].map(function(currentValue) {
@@ -55,42 +84,46 @@ var CourseTable = React.createClass({
      * prepare table
      *
      */
-    var rows = [];
-    this.state.label.times.map(function (currentValue, index) {
-      var fields;
-      if (index == 0) {
-        /**
-         * prepare thead
-         * 先產生childern (Days)
-         * 利用unshift補上開頭
-         */
-        fields = this.state.label.days.map(function(currentValue, index) {
-          if(index > this.state.day) return null;
-          return (<th key={index + 1}>{currentValue}</th>)
-        }.bind(this));
-        fields.unshift(<th key={0} className="two wide" />)
-        rows.push(<thead key={0}><tr key={0}>{fields}</tr></thead>);
-      }
+    var thead;
+    var tbody;
+    var fields;
+    /**
+     * prepare thead
+     * 先產生childern (Days)
+     * 利用unshift補上開頭
+     */
+    fields = this.state.label.days.map(function(currentValue, index) {
+      if(index + 1 > this.state.day) return null;
+      return (<th key={index + 1}>{currentValue}</th>)
+    }.bind(this));
+    fields.unshift(<th key={0} className="two wide" />)
+    thead = (<thead><tr key={0}>{fields}</tr></thead>);
+
+    /**
+     * prepare tbody
+     *
+     */
+
+    var rows =this.state.label.times.map(function (currentValue, RowIndex) {
+
+      if(RowIndex + 1 > this.state.row) return null;
       /**
-       * prepare tbody
        * 這邊好玄喔....Apply的用法，先產生N個元素的空array
        * 接著透過map針對每個element填入資料
        * 參考自 http://stackoverflow.com/questions/1295584/most-efficient-way-to-create-a-zero-filled-javascript-array
        * 最後利用unshift補上時間於row開頭
        */
       fields = Array.apply(null, Array(this.state.day)).map(function(element, index) {
+        if(this.state.extendData && this.state.extendData[index.toString()] && this.state.extendData[index.toString()][RowIndex.toString()])
+          return (<CourseTableDataField key={index + 1} course={this.state.extendData[index.toString()][RowIndex.toString()]} />)
         return (<CourseTableDataField key={index + 1} />)
-      })
-      fields.unshift(<td key={0} className="center aligned"><p key={0}>第 {index + 1} 節</p><p key={1}>{currentValue}</p></td>)
-      rows.push(<tr key={index + 1}>{fields}</tr>)
+      }.bind(this))
+      fields.unshift(<td key={0} className="center aligned"><p key={0}>第 {RowIndex + 1} 節</p><p key={1}>{currentValue}</p></td>)
+      return (<tr key={RowIndex + 1}>{fields}</tr>)
 
     }.bind(this))
 
-    /**
-     * fill Data
-     *
-     */
-    
+    tbody = (<tbody>{rows}</tbody>)
 
     return (
       <div>
@@ -112,7 +145,8 @@ var CourseTable = React.createClass({
         </div>
 
         <table id="CourseTable" className="ui definition table celled">
-          {rows}
+          {thead}
+          {tbody}
         </table>
       </div>
     )
@@ -143,11 +177,11 @@ var CourseTable = React.createClass({
 
 var CourseTableDataField = React.createClass({
   render: function() {
-    if(this.props.data) {
+    if(this.props.course) {
       return(
         <td>
-          <a href="#" onClick={this.props.onClick}><i class="close icon"></i></a>
-
+          <a href="#" onClick={this.props.onClick}><i className="close icon"></i></a>
+          <p>{this.props.course.courseName}</p>
         </td>
       );
     } else {
