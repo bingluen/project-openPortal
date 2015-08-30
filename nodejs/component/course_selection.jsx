@@ -11,8 +11,8 @@ var CourseSelection = React.createClass({
           <CourseTable />
         </div>
         <div className="ui bottom attached tab segment" data-tab="search">
-          <p>搜尋課表</p>
-          <p></p>
+
+          <SearchCourse />
         </div>
       </div>
     )
@@ -143,8 +143,7 @@ var CourseTable = React.createClass({
         </table>
       </div>
     )
-  }
-  ,
+  },
   componentDidMount: function() {
     $('select.dropdown.daysOption')
       .dropdown({
@@ -162,19 +161,19 @@ var CourseTable = React.createClass({
 
 /**
  * Data Obj format: (column name)
+ * course uid
  * Course Code
  * Course Name
  * Teacher Name
  * Time
  */
-
 var CourseTableDataField = React.createClass({
   render: function() {
     if(this.props.course) {
       return(
         <td>
           <a href="#" onClick={this.props.onClick}><i className="close icon"></i></a>
-          <p>{this.props.course.courseName}</p>
+          <p className="center aligned">{this.props.course.courseName}<br/>{this.props.course.teacherName}</p>
         </td>
       );
     } else {
@@ -183,6 +182,68 @@ var CourseTableDataField = React.createClass({
   }
 });
 
+var SearchCourse = React.createClass({
+  render: function() {
+    return (
+      <div className="ui grid">
+        <div className="four wide column">
+          <SearchForm />
+        </div>
+
+        <div className="twelve wide column">
+
+        </div>
+
+      </div>
+    )
+  }
+});
+
+var SearchForm = React.createClass({
+  getInitialState: function() {
+    return ( null )
+  },
+  render: function() {
+    return (
+      <div className="ui form">
+        <h2 className="ui dividing header">搜尋課程</h2>
+          <div className="field">
+            <label>開課系所 Department</label>
+            <select className="ui dropdown department">
+              <option>請選擇 Please Select</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>選課年級 Grade</label>
+            <select className="ui dropdown grade">
+              <option>請選擇 Please Select</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>課程名稱</label>
+            <input type="text" placeholder="Course Name" />
+          </div>
+          <div className="field">
+            <label>開課教師</label>
+            <input type="text" placeholder="Teacher Name" />
+          </div>
+          <div className="ui buttons right floated">
+            <button className="ui button">Reset</button>
+            <div className="or"></div>
+            <button className="ui positive button">Search</button>
+          </div>
+      </div>
+    )
+  },
+  componentDidMount: function() {
+    $('select.dropdown.department')
+      .dropdown()
+    ;
+    $('select.dropdown.grade')
+      .dropdown()
+    ;
+  }
+})
 
 $(document).ready(function() {
   $('.menu .item')
