@@ -4,6 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import codecs
+import json
+from datetime import datetime
+
 
 proxy = {
 }
@@ -11,13 +14,76 @@ proxy = {
 class CourseCatcher:
 	def __init__(self):
 		self.url = 'https://portal.yzu.edu.tw/cosSelect/Index.aspx'
-		self.requests = requests.Session();
-		self.database = codecs.open("database.sql", "w", "utf-8")
-		self.database.write(u'\ufeff')
-		self.database.write(u'INSERT INTO `coursedatabase` (`code`, `class`, `department`, `degree`, `credit`, `chinese_name`, `chinese_teacherName`, `type`, `url`, `year`, `semester`, `time`) VALUES\r\n')
-		self.eco_viewstate = '';
-		self.eco_eventvalidation = '';
-		self.eco_viewstategenerator = '';
+		self.requests = requests.Session()
+		self.courseData = {
+			'update' : str(datetime.now()) ,
+			'course': [],
+			'courseCount': 0,
+			'department': [
+				{'departmentCode' : '300', 'departmentName': '工程學院'},
+				{'departmentCode' : '302', 'departmentName': '機械工程學系學士班'},
+				{'departmentCode' : '303', 'departmentName': '化學工程與材料科學學系學士班'},
+				{'departmentCode' : '305', 'departmentName': '工業工程與管理學系學士班'},
+				{'departmentCode' : '322', 'departmentName': '機械工程學系碩士班'},
+				{'departmentCode' : '323', 'departmentName': '化學工程與材料科學學系碩士班'},
+				{'departmentCode' : '325', 'departmentName': '工業工程與管理學系碩士班'},
+				{'departmentCode' : '329', 'departmentName': '生物科技與工程研究所碩士班'},
+				{'departmentCode' : '330', 'departmentName': '先進能源碩士學位學程'},
+				{'departmentCode' : '352', 'departmentName': '機械工程學系博士班'},
+				{'departmentCode' : '353', 'departmentName': '化學工程與材料科學學系博士班'},
+				{'departmentCode' : '355', 'departmentName': '工業工程與管理學系博士班'},
+				{'departmentCode' : '500', 'departmentName': '管理學院'},
+				{'departmentCode' : '505', 'departmentName': '管理學院學士班'},
+				{'departmentCode' : '530', 'departmentName': '管理學院經營管理碩士班'},
+				{'departmentCode' : '531', 'departmentName': '管理學院財務金融暨會計碩士班'},
+				{'departmentCode' : '532', 'departmentName': '管理學院管理碩士在職專班'},
+				{'departmentCode' : '554', 'departmentName': '管理學院博士班'},
+				{'departmentCode' : '600', 'departmentName': '人文社會學院'},
+				{'departmentCode' : '601', 'departmentName': '應用外語學系學士班'},
+				{'departmentCode' : '602', 'departmentName': '中國語文學系學士班'},
+				{'departmentCode' : '603', 'departmentName': '藝術與設計學系學士班'},
+				{'departmentCode' : '604', 'departmentName': '社會暨政策科學學系學士班'},
+				{'departmentCode' : '621', 'departmentName': '應用外語學系碩士班'},
+				{'departmentCode' : '622', 'departmentName': '中國語文學系碩士班'},
+				{'departmentCode' : '623', 'departmentName': '藝術與設計學系(藝術管理碩士班)'},
+				{'departmentCode' : '624', 'departmentName': '社會暨政策科學學系碩士班'},
+				{'departmentCode' : '656', 'departmentName': '文化產業與文化政策博士學位學程'},
+				{'departmentCode' : '700', 'departmentName': '資訊學院'},
+				{'departmentCode' : '304', 'departmentName': '資訊工程學系學士班'},
+				{'departmentCode' : '701', 'departmentName': '資訊管理學系學士班'},
+				{'departmentCode' : '702', 'departmentName': '資訊傳播學系學士班'},
+				{'departmentCode' : '721', 'departmentName': '資訊管理學系碩士班'},
+				{'departmentCode' : '722', 'departmentName': '資訊傳播學系碩士班'},
+				{'departmentCode' : '723', 'departmentName': '資訊社會學碩士學位學程'},
+				{'departmentCode' : '724', 'departmentName': '資訊工程學系碩士班'},
+				{'departmentCode' : '725', 'departmentName': '生物與醫學資訊碩士學位學程'},
+				{'departmentCode' : '751', 'departmentName': '資訊管理學系博士班'},
+				{'departmentCode' : '754', 'departmentName': '資訊工程學系博士班'},
+				{'departmentCode' : '800', 'departmentName': '電機通訊學院'},
+				{'departmentCode' : '301', 'departmentName': '電機工程學系學士班'},
+				{'departmentCode' : '307', 'departmentName': '通訊工程學系學士班'},
+				{'departmentCode' : '308', 'departmentName': '光電工程學系學士班'},
+				{'departmentCode' : '326', 'departmentName': '電機工程學系碩士班'},
+				{'departmentCode' : '327', 'departmentName': '通訊工程學系碩士班'},
+				{'departmentCode' : '328', 'departmentName': '光電工程學系碩士班'},
+				{'departmentCode' : '356', 'departmentName': '電機工程學系博士班'},
+				{'departmentCode' : '357', 'departmentName': '通訊工程學系博士班'},
+				{'departmentCode' : '358', 'departmentName': '光電工程學系博士班'},
+				{'departmentCode' : '901', 'departmentName': '通識教學部'},
+				{'departmentCode' : '903', 'departmentName': '軍訓室'},
+				{'departmentCode' : '904', 'departmentName': '體育室'},
+				{'departmentCode' : '906', 'departmentName': '國際語言文化中心'},
+				{'departmentCode' : '907', 'departmentName': '國際兩岸事務室'}
+			]
+		}
+		##self.database = codecs.open("database.sql", "w", "utf-8")
+		##self.database.write(u'\ufeff')
+		##self.database.write(u'INSERT INTO `coursedatabase` (`code`, `class`, `department`, `degree`, `credit`, `chinese_name`, `chinese_teacherName`, `type`, `url`, `year`, `semester`, `time`) VALUES\r\n')
+		self.jsonDB = codecs.open("database.json", "w", "utf-8")
+		##self.jsonDB = write(u'\ufeff')
+		self.eco_viewstate = ''
+		self.eco_eventvalidation = ''
+		self.eco_viewstategenerator = ''
 		self.legalDepartment = [300, 302, 303, 305, 322,
 			323, 325, 329, 330, 352,
 			353, 355, 500, 505, 530,
@@ -29,9 +95,10 @@ class CourseCatcher:
 			301, 307, 308, 326, 327,
 			328, 356, 357, 358, 901,
 			903, 904, 906, 907];
+		self.testDepartment = [300, 302];
 
-	def __del__(self):
-		self.database.close()
+	###def __del__(self):
+		##self.database.close()
 
 	def catch(self, catchYear, catchSemester, department, degree):
 		## 第一次連線 - 抓環境變數ß
@@ -116,7 +183,7 @@ class CourseCatcher:
 					courseData['type'] = rowData[4].text
 
 					#class time
-					courseData['time'] = rowData[5].text.replace('        ', ',')
+					courseData['time'] = ', '.join(re.findall('([0-9]{3}) ', rowData[5].text, re.S))
 
 					#teacher name
 					courseData['teacher'] = re.findall('[^()]*', rowData[6].text, re.S)[0]
@@ -161,7 +228,12 @@ class CourseCatcher:
 			#credit
 			course['credit'] = int(data[4].text)
 
+			#create uid
+			course['uid'] = self.courseData['courseCount'] + 1
+
 			newCourselist.append(course)
+
+			self.courseData['courseCount'] =  self.courseData['courseCount'] + 1
 
 		return newCourselist
 
@@ -173,7 +245,8 @@ class CourseCatcher:
 			`url`, `year`, `semester`,
 			`time`)
 		"""
-
+		###print (json.dumps(courseList))
+		"""
 		for row in courseList:
 			self.database.write(u'(')
 			self.database.write(u'\''+row['code']+u'\', ')
@@ -189,6 +262,7 @@ class CourseCatcher:
 			self.database.write(u'\''+str(row['semester'])+u'\', ')
 			self.database.write(u'\''+row['time']+u'\'')
 			self.database.write(u'), \r\n')
+		"""
 
 	def execute(self):
 		for department in self.legalDepartment:
@@ -196,10 +270,11 @@ class CourseCatcher:
 				print('catch department = ' + str(department) + ' degree = ' + str(degree), end='')
 				parserList = self.parserList(self.catch(104, 1, department, degree), 104, 1, department, degree)
 				if parserList is not None:
-					self.writeRow(self.parseCourse(parserList))
+					self.courseData['course'] = self.courseData['course'] + self.parseCourse(parserList)
 					print('.........Finish')
 				else:
 					print('.........Empty')
+		json.dump(json.dumps(self.courseData), self.jsonDB)
 
 
 
