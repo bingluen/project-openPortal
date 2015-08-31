@@ -8,7 +8,7 @@
     "gulp": "gulp"
   },
   "author": "Erickson Juang",
-  "license": "MIT",
+  "license": "CPL 1.0",
   "dependencies": {
     "express": "^4.13.1"
   },
