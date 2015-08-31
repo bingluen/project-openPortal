@@ -59,10 +59,22 @@ var CourseTable = React.createClass({
     var extendCourse = {}
     courseList.map(function(element) {
       element.courseTime.map(function(value) {
+        /* 若課表天數不夠，自動增加 */
+        if( Math.floor(value / 100) > this.state.day ) {
+          $('.dropdown.daysOption')
+            .dropdown('set selected', Math.floor(value / 100))
+          ;
+        }
+        /* 若課表節數不夠，自動增加 */
+        if( value % 100 > this.state.row) {
+          $('.dropdown.lessonsOption')
+            .dropdown('set selected', value % 100)
+          ;
+        }
         extendCourse[Math.floor(value / 100 - 1).toString()] = extendCourse[Math.floor(value / 100 - 1).toString()] || {}
         extendCourse[Math.floor(value / 100 - 1).toString()][(value % 100 - 1).toString()] = element;
-      });
-    });
+      }.bind(this));
+    }.bind(this));
     this.setState({extendData: extendCourse});
   },
   componentWillReceiveProps: function() {
@@ -178,7 +190,7 @@ var CourseTableDataField = React.createClass({
     if(this.props.course) {
       return(
         <td>
-          <a href="#" onClick={this.props.onClick}><i className="close icon"></i></a>
+          <a href="#" className="right floated"><i className="close icon"></i></a>
           <p className="center aligned">{this.props.course.courseName}<br/>{this.props.course.teacherName}</p>
         </td>
       );
