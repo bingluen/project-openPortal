@@ -1,4 +1,16 @@
 var CourseSelection = React.createClass({
+  getInitialState: function() {
+    return(
+      {
+        list: []
+      }
+    )
+  },
+  handleAddCourse: function(course) {
+    var list = this.state.list;
+    list.push(course);
+    this.setState({list: list})
+  },
   render: function() {
     return (
       <div id="CourseSelection">
@@ -8,11 +20,11 @@ var CourseSelection = React.createClass({
         </div>
         <div className="ui bottom attached tab segment active content" data-tab="schedule">
 
-          <CourseTable />
+          <CourseTable courseList={this.state.list} />
         </div>
         <div className="ui bottom attached tab segment" data-tab="search">
 
-          <SearchCourse />
+          <SearchCourse handleAddCourse={this.handleAddCourse}/>
         </div>
       </div>
     )
@@ -33,8 +45,6 @@ var CourseTable = React.createClass({
         ],
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       },
-      rawData:[],
-      needRefresh: true
     })
   },
   handleDaysChange: function(event) {
@@ -45,10 +55,9 @@ var CourseTable = React.createClass({
     if ( !event ) return false;
     this.setState({row: event});
   },
-  refreshData: function() {
-    if (!this.state.needRefresh) return;
+  refreshData: function(courseList) {
     var extendCourse = {}
-    this.state.rawData.map(function(element) {
+    courseList.map(function(element) {
       element.courseTime.map(function(value) {
         extendCourse[Math.floor(value / 100 - 1).toString()] = extendCourse[Math.floor(value / 100 - 1).toString()] || {}
         extendCourse[Math.floor(value / 100 - 1).toString()][(value % 100 - 1).toString()] = element;
@@ -56,14 +65,11 @@ var CourseTable = React.createClass({
     });
     this.setState({extendData: extendCourse});
   },
-  componentWillMount: function() {
-    this.refreshData();
-  },
-  componentWillUpdate: function() {
-    this.state.needRefresh = !this.state.needRefresh;
-    this.refreshData();
+  componentWillReceiveProps: function() {
+    this.refreshData(this.props.courseList);
   },
   render: function() {
+    console.log()
     var daysOption = [5, 6].map(function(currentValue) {
       return (<option key={currentValue} value={currentValue}>{currentValue}</option>)
     }.bind(this));
@@ -183,15 +189,92 @@ var CourseTableDataField = React.createClass({
 });
 
 var SearchCourse = React.createClass({
+  getInitialState: function() {
+    $.ajax({
+      url: 'course_database.json',
+      type: 'get',
+      dataType: 'json'
+
+    })
+    .done(function(data, textStatus, jqXHR) {
+      this.setState({courseData: data});
+    }.bind(this))
+    .fail(function(jqXHR, textStatus, errorThrown) {
+    });
+
+    return ( {
+      degree: [1, 2, 3, 4],
+      reslut: {}
+    } )
+  },
+  handleSearchFormSubmit: function(keys) {
+
+    var result = this.state.courseData.course;
+
+    if(keys.department) {
+      result = result.filter(function(element, index, array) {
+        return element.department == keys.department;
+      });
+    }
+
+    if(keys.degree) {
+      result = result.filter(function(element, index, array) {
+        return element.degree == keys.degree;
+      });
+    }
+
+    if(keys.courseCode) {
+      result = result.filter(function(element, index, array) {
+        return element.code.indexOf(keys.courseCode) >= 0;
+      });
+    }
+
+    if(keys.courseName) {
+      result = result.filter(function (element, index, array) {
+        return element.chinese_name.indexOf(keys.courseName) >= 0;
+      });
+    }
+
+    if(keys.teacherName) {
+      result = result.filter(function (element, index, array) {
+        return element.teacher.indexOf(keys.teacherName) >= 0;
+      });
+    }
+
+    this.setState({result: result});
+  },
+  handleCourseAdd: function(course) {
+    /**
+     * Data Obj format: (column name)
+     * course uid
+     * Course Code
+     * Course Name
+     * Teacher Name
+     * Time
+     */
+    this.props.handleAddCourse({
+      courseUid:course.uid,
+      courseCode:course.code,
+      courseName:course.chinese_name,
+      teacherName:course.teacher,
+      courseTime:course.time.split(',').map(function(element) { return parseInt(element) })
+    })
+  },
   render: function() {
+    if (!this.state.courseData) return null;
+
     return (
-      <div className="ui grid">
-        <div className="four wide column">
-          <SearchForm />
+      <div className="ui grid stackable">
+        <div className="six wide column">
+          <SearchForm degree={this.state.degree}
+            department={this.state.courseData.department}
+            updateTime={this.state.courseData.update}
+            handleSubmit={this.handleSearchFormSubmit} />
         </div>
 
-        <div className="twelve wide column">
-
+        <div className="ten wide column searchResult">
+          <SearchResult result={this.state.result}
+            handleAdd={this.handleCourseAdd} />
         </div>
 
       </div>
@@ -201,49 +284,164 @@ var SearchCourse = React.createClass({
 
 var SearchForm = React.createClass({
   getInitialState: function() {
-    return ( null )
+    return({
+      department: 0,
+      degree: 0
+    })
+  },
+  handleDepartmentChange: function(value) {
+    if(value) this.setState({department: value});
+  },
+  handleGradeChange: function(value) {
+    if(value) this.setState({degree: value});
+  },
+  handleReset: function() {
+    $('form').removeClass('error');
+    if(this.state.department != 0) {
+      $('.dropdown.department')
+        .dropdown('restore defaults')
+      ;
+    }
+
+    if(this.state.degree != 0) {
+      $('.dropdown.degree')
+        .dropdown('restore defaults')
+      ;
+    }
+
+  },
+  handleSubmit: function(e) {
+    $('form').removeClass('error');
+    e.preventDefault();
+    var keys = {
+      department: this.state.department,
+      degree: this.state.degree,
+      courseCode: (React.findDOMNode(this.refs.courseCode).value.trim() || null),
+      courseName: (React.findDOMNode(this.refs.courseName).value.trim() || null),
+      teacherName: (React.findDOMNode(this.refs.teacherName).value.trim() || null)
+    }
+
+    if( keys.department != 0
+       || keys.degree != 0
+       || keys.courseCode
+       || keys.courseName
+       || keys.teacherName)
+      this.props.handleSubmit(keys);
+    else
+      $('form').addClass('error');
   },
   render: function() {
+    var Department = this.props.department.map(function(element, index) {
+      return (<option key={index + 1} value={element.departmentCode}>{element.departmentName}</option>)
+    });
+    Department.unshift(<option key={0} value={0}>請選擇 Please Select</option>)
+
+    var Grade = this.props.degree.map(function(element, index) {
+      return (<option key={index + 1} value={element}>{element}</option>)
+    });
+    Grade.unshift(<option key={0} value={0}>請選擇 Please Select</option>)
+
     return (
-      <div className="ui form">
+      <form className="ui form" onSubmit={this.handleSubmit}>
         <h2 className="ui dividing header">搜尋課程</h2>
+          <div className="ui error message">
+            <div className="header">缺少搜尋條件</div>
+            <p>請至少指定一個搜尋條件，再進行搜尋。</p>
+          </div>
           <div className="field">
             <label>開課系所 Department</label>
-            <select className="ui dropdown department">
-              <option>請選擇 Please Select</option>
+            <select defaultValue={this.state.department} className="ui dropdown search department">
+              {Department}
             </select>
           </div>
           <div className="field">
             <label>選課年級 Grade</label>
-            <select className="ui dropdown grade">
-              <option>請選擇 Please Select</option>
+            <select defaultValue={this.state.degree} className="ui dropdown degree">
+              {Grade}
             </select>
           </div>
           <div className="field">
+            <label>課號</label>
+            <input type="text" placeholder="Course Code" ref="courseCode" />
+          </div>
+          <div className="field">
             <label>課程名稱</label>
-            <input type="text" placeholder="Course Name" />
+            <input type="text" placeholder="Course Name" ref="courseName" />
           </div>
           <div className="field">
             <label>開課教師</label>
-            <input type="text" placeholder="Teacher Name" />
+            <input type="text" placeholder="Teacher Name" ref="teacherName" />
+          </div>
+          <div className="field">
+            <label>資料庫最後更新時間</label>{this.props.updateTime}
           </div>
           <div className="ui buttons right floated">
-            <button className="ui button">Reset</button>
+            <button type="reset" className="ui button reset" onClick={this.handleReset}>Reset</button>
             <div className="or"></div>
-            <button className="ui positive button">Search</button>
+            <button type="submit" className="ui positive button">Search</button>
           </div>
-      </div>
+      </form>
     )
   },
   componentDidMount: function() {
     $('select.dropdown.department')
-      .dropdown()
+      .dropdown({
+        onChange: this.handleDepartmentChange
+      })
     ;
-    $('select.dropdown.grade')
-      .dropdown()
+    $('select.dropdown.degree')
+      .dropdown({
+        onChange: this.handleGradeChange
+      })
     ;
   }
 })
+
+var SearchResult = React.createClass({
+  handleAdd: function(course) {
+    this.props.handleAdd(course);
+  },
+  render: function() {
+    if(!this.props.result) return null;
+    var result = this.props.result.map(function(element, index) {
+      return(
+        <tr key={index}>
+          <td><a href={element.url} target="_blank">{element.code}</a></td>
+          <td>{element.teacher}</td>
+          <td>{element.chinese_name}</td>
+          <td>{element.credit}</td>
+          <td>{element.time}</td>
+          <td>{element.degree}</td>
+          <td><div className="ui basic olive button" onClick={this.handleAdd.bind(this, element)}>Add</div></td>
+        </tr>
+      )
+    }.bind(this));
+
+    return (
+      <div className="ui segment">
+        <div className="ui dimmer">
+          <div className="ui indeterminate text loader">Searching</div>
+        </div>
+        <table className="ui very basic collapsing celled table">
+          <thead>
+            <tr>
+              <th className="one wide">課號</th>
+              <th className="two wide">開課教師</th>
+              <th className="three wide">課程名稱</th>
+              <th className="one wide">學分</th>
+              <th className="one wide">時間</th>
+              <th className="one wide">可選年級</th>
+              <th className="one wide">Add</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+});
 
 $(document).ready(function() {
   $('.menu .item')
