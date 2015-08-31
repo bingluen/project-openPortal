@@ -11,6 +11,13 @@ var CourseSelection = React.createClass({
     list.push(course);
     this.setState({list: list})
   },
+  handleDelete: function(uid) {
+    this.setState({
+      list: this.state.list.filter(function(element) {
+        return element.uid != uid;
+      })
+    });
+  },
   render: function() {
     return (
       <div id="CourseSelection">
@@ -20,7 +27,7 @@ var CourseSelection = React.createClass({
         </div>
         <div className="ui bottom attached tab segment active content" data-tab="schedule">
 
-          <CourseTable courseList={this.state.list} />
+          <CourseTable courseList={this.state.list} handleDelete={this.handleDelete} />
         </div>
         <div className="ui bottom attached tab segment" data-tab="search">
 
@@ -55,7 +62,11 @@ var CourseTable = React.createClass({
     if ( !event ) return false;
     this.setState({row: event});
   },
+  handleDelete: function(uid) {
+    this.props.handleDelete(uid)
+  },
   refreshData: function(courseList) {
+
     var extendCourse = {}
     courseList.map(function(element) {
       element.courseTime.map(function(value) {
@@ -77,11 +88,10 @@ var CourseTable = React.createClass({
     }.bind(this));
     this.setState({extendData: extendCourse});
   },
-  componentWillReceiveProps: function() {
-    this.refreshData(this.props.courseList);
+  componentWillReceiveProps: function(nextProps) {
+    this.refreshData(nextProps.courseList);
   },
   render: function() {
-    console.log()
     var daysOption = [5, 6].map(function(currentValue) {
       return (<option key={currentValue} value={currentValue}>{currentValue}</option>)
     }.bind(this));
@@ -126,7 +136,7 @@ var CourseTable = React.createClass({
        */
       fields = Array.apply(null, Array(this.state.day)).map(function(element, index) {
         if(this.state.extendData && this.state.extendData[index.toString()] && this.state.extendData[index.toString()][RowIndex.toString()])
-          return (<CourseTableDataField key={index + 1} course={this.state.extendData[index.toString()][RowIndex.toString()]} />)
+          return (<CourseTableDataField key={index + 1} course={this.state.extendData[index.toString()][RowIndex.toString()]} handleDelete={this.handleDelete} />)
         return (<CourseTableDataField key={index + 1} />)
       }.bind(this))
       fields.unshift(<td key={0} className="center aligned"><p key={0}>第 {RowIndex + 1} 節</p><p key={1}>{currentValue}</p></td>)
@@ -190,13 +200,16 @@ var CourseTableDataField = React.createClass({
     if(this.props.course) {
       return(
         <td>
-          <a href="#" className="right floated"><i className="close icon"></i></a>
+          <div className="right aligned"><a href="#" onClick={this.handleDelete}><i className="close icon"></i></a></div>
           <p className="center aligned">{this.props.course.courseName}<br/>{this.props.course.teacherName}</p>
         </td>
       );
     } else {
       return( <td></td>)
     }
+  },
+  handleDelete: function() {
+    this.props.handleDelete(this.props.course.uid);
   }
 });
 
