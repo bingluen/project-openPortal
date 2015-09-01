@@ -70,13 +70,13 @@ var CourseSelection = React.createClass({
           <SearchCourse handleAddCourse={this.handleAddCourse}/>
         </div>
 
-        <div className="ui bottom attached tab segment" data-tabe="about">
+        <div className="ui bottom attached tab segment" data-tab="about">
           <div className="header">
             關於
           </div>
           <h4>注意事項</h4>
           <div className="ui bulleted list">
-            <div class="item">
+            <div className="item">
               課程資訊僅供參考，實際資訊請參閱
               <a href="https://portal.yzu.edu.tw/cosSelect/Index.aspx">
                 元智大學課程查詢系統
@@ -86,36 +86,47 @@ var CourseSelection = React.createClass({
           </div>
           <h4>使用的Framework</h4>
           <div className="ui bulleted list">
-            <div class="item">
+            <div className="item">
               React 0.13.3
             </div>
-            <div class="item">
+            <div className="item">
               Semantic ui 2.0.8
+            </div>
+            <div className="item">
+              jsurl.js
+            </div>
+            <div className="item">
+              jQuery
             </div>
           </div>
           <h4>原始碼與授權</h4>
-          <div className="ui bulleted list">
-            <div class="item">
-              <i class="large github middle aligned icon"></i>
-              <div class="content">
-                <a class="header"
-                  href="">
-                  source code
-                </a>
-                <div class="description">可以由github上觀看source code</div>
+          <div className="ui list">
+            <div className="ui items">
+              <div className="item">
+                <div className="ui mini image">
+                  <i className="big github icon"></i>
+                </div>
+                <div className="content">
+                  <div className="header">Source code on Github</div>
+                  <div className="description">
+                    <p>可以由Github上觀看source code</p>
+                    <p><a href="https://github.com/erickson-makotoki/yzu-css">https://github.com/erickson-makotoki/yzu-css</a></p>
+                  </div>
+                </div>
+              </div>
+              <div className="item">
+                <div className="ui mini image">
+                  <i className="big code icon"></i>
+                </div>
+                <div className="content">
+                  <div className="header">MIT 授權</div>
+                  <div className="description">
+                    <p>可參閱<a href="http://www.openfoundry.org/tw/licenses/34-mit-licensemit">http://www.openfoundry.org/tw/licenses/34-mit-licensemit</a></p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="item">
-              <i class="large Code middle aligned icon"></i>
-              <div class="content">
-                <a class="header"
-                  href="">
-                  MITg
-                </a>
-                <div class="description">可參閱</div>
-              </div>
 
-            </div>
           </div>
         </div>
 
@@ -557,10 +568,12 @@ var SearchForm = React.createClass({
           <div className="field">
             <label>資料庫最後更新時間</label>{this.props.updateTime}
           </div>
-          <div className="ui buttons right floated">
-            <button type="reset" className="ui button reset" onClick={this.handleReset}>Reset</button>
-            <div className="or"></div>
-            <button type="submit" className="ui positive button">Search</button>
+          <div className="field right aligned">
+            <div className="ui buttons">
+              <button type="reset" className="ui button reset" onClick={this.handleReset}>Reset</button>
+              <div className="or"></div>
+              <button type="submit" className="ui positive button">Search</button>
+            </div>
           </div>
       </form>
     )
