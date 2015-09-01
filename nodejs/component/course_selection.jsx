@@ -1,15 +1,43 @@
 var CourseSelection = React.createClass({
   getInitialState: function() {
-    return(
+
+    if(window.location.search.length <= 0) return({ list: [] })
+    parameters = {}
+    window.location.search.substring(1).split('&').map(function(element) {
+      token = element.split('=')
+      parameters[token[0]] = token[1]
+    })
+    if(!parameters.data) return({ list: [] })
+    try {
+      var data = JSURL.parse(atob(parameters.data))
+      return ({ list: data })
+    } catch(e) {
+      return({ parseError: true, list: [] })
+    }
+
+  },
+  isConflictCheck: function(list, course) {
+    /* 檢查衝堂 */
+    for(var i = 0; i < list.length; i++) {
+      for(var j = 0; j < list[i].courseTime.length; j++)
       {
-        list: []
+        if (course.courseTime.indexOf(list[i].courseTime[j]) >= 0) {
+
+          $('.ui.modal.conflictWarning')
+            .modal('show')
+          ;
+          return true
+        }
       }
-    )
+    }
+    return false;
   },
   handleAddCourse: function(course) {
     var list = this.state.list;
-    list.push(course);
-    this.setState({list: list})
+    if(!this.isConflictCheck(list, course)) {
+      list.push(course);
+      this.setState({list: list});
+    }
   },
   handleDelete: function(uid) {
     this.setState({
@@ -21,9 +49,17 @@ var CourseSelection = React.createClass({
   render: function() {
     return (
       <div id="CourseSelection">
+        <div className="ui parseError warning message hidden">
+          <i className="close icon"></i>
+          <div className="header">
+            網址解析失敗
+          </div>
+          <p>無法從網址讀取資料。因此課表將顯示為空白</p>
+        </div>
         <div className="ui top attached secondary pointing menu">
           <a className="active item" data-tab="schedule">我的課表</a>
           <a className="item" data-tab="search">Search</a>
+          <a className="item" data-tab="about">About</a>
         </div>
         <div className="ui bottom attached tab segment active content" data-tab="schedule">
 
@@ -33,8 +69,92 @@ var CourseSelection = React.createClass({
 
           <SearchCourse handleAddCourse={this.handleAddCourse}/>
         </div>
+
+        <div className="ui bottom attached tab segment" data-tabe="about">
+          <div className="header">
+            關於
+          </div>
+          <h4>注意事項</h4>
+          <div className="ui bulleted list">
+            <div class="item">
+              課程資訊僅供參考，實際資訊請參閱
+              <a href="https://portal.yzu.edu.tw/cosSelect/Index.aspx">
+                元智大學課程查詢系統
+              </a>
+              。
+            </div>
+          </div>
+          <h4>使用的Framework</h4>
+          <div className="ui bulleted list">
+            <div class="item">
+              React 0.13.3
+            </div>
+            <div class="item">
+              Semantic ui 2.0.8
+            </div>
+          </div>
+          <h4>原始碼與授權</h4>
+          <div className="ui bulleted list">
+            <div class="item">
+              <i class="large github middle aligned icon"></i>
+              <div class="content">
+                <a class="header"
+                  href="">
+                  source code
+                </a>
+                <div class="description">可以由github上觀看source code</div>
+              </div>
+            </div>
+            <div class="item">
+              <i class="large Code middle aligned icon"></i>
+              <div class="content">
+                <a class="header"
+                  href="">
+                  MITg
+                </a>
+                <div class="description">可參閱</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div className="ui basic modal conflictWarning">
+          <i className="close icon"></i>
+          <div className="header">
+            糟糕，衝堂了
+          </div>
+          <div className="image content">
+            <div className="image">
+              <i className="warning circle icon"></i>
+            </div>
+            <div className="description">
+              <p>此課程開課時間，和你已經選的課有重疊喔！</p>
+            </div>
+          </div>
+          <div className="actions">
+              <div className="ui green basic inverted button">
+                <i className="checkmark icon"></i>
+                OK
+              </div>
+          </div>
+        </div>
       </div>
     )
+  },
+  componentDidMount: function() {
+    $('.message.parseError.warning .close')
+      .on('click', function() {
+        $(this)
+          .closest('.message')
+          .transition('fade')
+        ;
+      })
+    ;
+    if(this.state.parseError)
+      $('.message.parseError.warning')
+        .show()
+      ;
   }
 });
 
@@ -86,10 +206,13 @@ var CourseTable = React.createClass({
         extendCourse[Math.floor(value / 100 - 1).toString()][(value % 100 - 1).toString()] = element;
       }.bind(this));
     }.bind(this));
-    this.setState({extendData: extendCourse});
+    this.setState({rawData: courseList, extendData: extendCourse});
   },
   componentWillReceiveProps: function(nextProps) {
     this.refreshData(nextProps.courseList);
+  },
+  componentWillMount: function() {
+    this.refreshData(this.props.courseList);
   },
   render: function() {
     var daysOption = [5, 6].map(function(currentValue) {
@@ -149,7 +272,7 @@ var CourseTable = React.createClass({
     return (
       <div>
         <div className="ui form">
-          <div className="two fields">
+          <div className="three fields">
             <div className="field">
               <select defaultValue={this.state.day} className="ui dropdown daysOption">
                 {daysOption}
@@ -162,17 +285,44 @@ var CourseTable = React.createClass({
               </select>
               <label>Lessons per Day</label>
             </div>
+
+            <div className="field">
+              <div className="teal ui button generatingURL"
+                onClick={this.generatingURL}
+                data-content="匯出課表，下次可以由該網址繼續編輯。">產生網址</div>
+            </div>
           </div>
         </div>
+
 
         <table id="CourseTable" className="ui definition table celled">
           {thead}
           {tbody}
         </table>
+
+
+        <div className="ui modal basic generatingURL">
+          <i className="close icon"></i>
+          <div className="header">
+            產生網址
+          </div>
+          <div className="ui input fluid">
+            <input type="text" ref="url" readOnly />
+            <a target="_blank" className="ui teal right labeled icon button" ref="url_button">
+              <i className="linkify icon"></i>
+              Open
+            </a>
+          </div>
+        </div>
       </div>
     )
   },
   componentDidMount: function() {
+    $('.ui.button')
+      .popup({
+        position: 'bottom center'
+      })
+    ;
     $('select.dropdown.daysOption')
       .dropdown({
         onChange: this.handleDaysChange
@@ -182,6 +332,15 @@ var CourseTable = React.createClass({
       .dropdown({
         onChange: this.handleLessonsChange
       })
+    ;
+
+  },
+  generatingURL: function() {
+    var encode = btoa(JSURL.stringify(this.state.rawData))
+    React.findDOMNode(this.refs.url).value = window.location.protocol + '//' + window.location.host + window.location.pathname + '?data=' + encode
+    React.findDOMNode(this.refs.url_button).href = window.location.protocol + '//' + window.location.host + window.location.pathname + '?data=' + encode
+    $('.modal.generatingURL')
+      .modal('show')
     ;
   }
 });
@@ -233,7 +392,6 @@ var SearchCourse = React.createClass({
     } )
   },
   handleSearchFormSubmit: function(keys) {
-
     var result = this.state.courseData.course;
 
     if(keys.department) {
@@ -287,7 +445,6 @@ var SearchCourse = React.createClass({
   },
   render: function() {
     if (!this.state.courseData) return null;
-
     return (
       <div className="ui grid stackable">
         <div className="six wide column">
@@ -428,43 +585,65 @@ var SearchResult = React.createClass({
   },
   render: function() {
     if(!this.props.result) return null;
-    var result = this.props.result.map(function(element, index) {
-      return(
-        <tr key={index}>
-          <td><a href={element.url} target="_blank">{element.code}</a></td>
-          <td>{element.teacher}</td>
-          <td>{element.chinese_name}</td>
-          <td>{element.credit}</td>
-          <td>{element.time}</td>
-          <td>{element.degree}</td>
-          <td><div className="ui basic olive button" onClick={this.handleAdd.bind(this, element)}>Add</div></td>
-        </tr>
-      )
-    }.bind(this));
 
-    return (
-      <div className="ui segment">
-        <div className="ui dimmer">
-          <div className="ui indeterminate text loader">Searching</div>
+    if(this.props.result.length > 0) {
+      var result = this.props.result.map(function(element, index) {
+        return(
+          <tr key={index}>
+            <td><a href={element.url} target="_blank" className="courseCode" data-content="點選可連結至學校課程系統，觀看課程大綱。">{element.code}</a></td>
+            <td>{element.teacher}</td>
+            <td>{element.chinese_name}</td>
+            <td>{element.credit}</td>
+            <td>{element.time}</td>
+            <td>{element.degree}</td>
+            <td><div className="ui basic olive button" onClick={this.handleAdd.bind(this, element)}>Add</div></td>
+          </tr>
+        )
+      }.bind(this));
+
+      return (
+        <div className="ui">
+          <h2 className="ui dividing header">搜尋結果</h2>
+          <table className="ui striped table">
+            <thead>
+              <tr>
+                <th className="one wide">課號</th>
+                <th className="two wide">開課教師</th>
+                <th className="three wide">課程名稱</th>
+                <th className="one wide">學分</th>
+                <th className="one wide">時間</th>
+                <th className="one wide">可選年級</th>
+                <th className="one wide">Add</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result}
+            </tbody>
+          </table>
         </div>
-        <table className="ui very basic collapsing celled table">
-          <thead>
-            <tr>
-              <th className="one wide">課號</th>
-              <th className="two wide">開課教師</th>
-              <th className="three wide">課程名稱</th>
-              <th className="one wide">學分</th>
-              <th className="one wide">時間</th>
-              <th className="one wide">可選年級</th>
-              <th className="one wide">Add</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result}
-          </tbody>
-        </table>
-      </div>
-    )
+      )
+    } else {
+      return (
+        <div className="ui">
+          <h2 className="ui dividing header">搜尋結果</h2>
+          <div className="warning ui message">
+            <div className="header">沒有符合條件的資料</div>
+            <ul className="list">
+              <li>關鍵字錯誤？（例如在課號中輸入課程名稱）</li>
+              <li>嘗試減少關鍵字，改用系所和年級查詢</li>
+            </ul>
+          </div>
+        </div>
+      )
+    }
+
+  },
+  componentDidUpdate: function() {
+    $('.courseCode')
+      .popup({
+        position: 'bottom center'
+      })
+    ;
   }
 });
 
