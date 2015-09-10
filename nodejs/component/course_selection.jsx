@@ -22,6 +22,13 @@ var CourseSelection = React.createClass({
       for(var j = 0; j < list[i].courseTime.length; j++)
       {
         if (course.courseTime.indexOf(list[i].courseTime[j]) >= 0) {
+          $('#conflictCourse')
+            .append('<p>欲加選的課程：<br/>')
+            .append(course.courseTime.toString() + ' : ' + course.courseName)
+            .append('</p><p>已與課表上下列課程時間重疊：<br/>')
+            .append(list[i].courseTime.toString() + ' : ' + list[i].courseName)
+            .append('</p>')
+          ;
 
           $('.ui.modal.conflictWarning')
             .modal('show')
@@ -32,12 +39,26 @@ var CourseSelection = React.createClass({
     }
     return false;
   },
-  handleAddCourse: function(course) {
+  handleAddCourse: function(course, button) {
     var list = this.state.list;
     if(!this.isConflictCheck(list, course)) {
       list.push(course);
       this.setState({list: list});
+
+      //button Animation
+      setTimeout(function () {
+        button
+          .html('Added')
+          .addClass('disabled')
+        ;
+        console.log(button)
+      }, 600);
     }
+    setTimeout(function () {
+      button
+        .removeClass('loading')
+      ;
+    }, 600);
   },
   handleDelete: function(uid) {
     this.setState({
@@ -141,6 +162,9 @@ var CourseSelection = React.createClass({
             </div>
             <div className="description">
               <p>此課程開課時間，和你已經選的課有重疊喔！</p>
+              <div id="conflictCourse">
+
+              </div>
             </div>
           </div>
           <div className="actions">
@@ -437,7 +461,7 @@ var SearchCourse = React.createClass({
 
     this.setState({result: result});
   },
-  handleCourseAdd: function(course) {
+  handleCourseAdd: function(course, button) {
     /**
      * Data Obj format: (column name)
      * course uid
@@ -446,13 +470,15 @@ var SearchCourse = React.createClass({
      * Teacher Name
      * Time
      */
+
+    //Pass to parent Node to add
     this.props.handleAddCourse({
       courseUid:course.uid,
       courseCode:course.code,
       courseName:course.chinese_name,
       teacherName:course.teacher,
       courseTime:course.time.split(',').map(function(element) { return parseInt(element) })
-    })
+    }, button)
   },
   render: function() {
     if (!this.state.courseData) return null;
@@ -594,7 +620,12 @@ var SearchForm = React.createClass({
 
 var SearchResult = React.createClass({
   handleAdd: function(course) {
-    this.props.handleAdd(course);
+    var addButton = $(React.findDOMNode(this.refs['result-' + course.uid]));
+    //load Animation
+    addButton.addClass('loading');
+
+    //pass to parent Node
+    this.props.handleAdd(course, addButton);
   },
   render: function() {
     if(!this.props.result) return null;
@@ -609,7 +640,7 @@ var SearchResult = React.createClass({
             <td>{element.credit}</td>
             <td>{element.time}</td>
             <td>{element.degree}</td>
-            <td><div className="ui basic olive button" onClick={this.handleAdd.bind(this, element)}>Add</div></td>
+            <td><button className="ui green basic button" onClick={this.handleAdd.bind(this, element)} ref={"result-" + element.uid}>Add</button></td>
           </tr>
         )
       }.bind(this));
