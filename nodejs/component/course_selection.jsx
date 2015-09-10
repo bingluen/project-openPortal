@@ -62,7 +62,7 @@ var CourseSelection = React.createClass({
   handleDelete: function(uid) {
     this.setState({
       list: this.state.list.filter(function(element) {
-        return element.uid != uid;
+        return element.courseUid != uid;
       })
     });
   },
@@ -91,14 +91,64 @@ var CourseSelection = React.createClass({
         </div>
 
         <div className="ui bottom attached tab segment" data-tab="about">
-          <div className="header">
+          <h2 className="ui dividing header">
             關於
+          </h2>
+          <h3 className="ui header">作者</h3>
+          <div className="ui list">
+            <div className="item">
+              <img className="ui avatar image" src="http://www.gravatar.com/avatar/7bc81b728640a4917ec3b6625d16425e" />
+              <div className="content">
+                <a className="header">Erickson Juang</a>
+                <div className="description">資訊工程學系102級(104~)、電機工程學系101級(101~103)</div>
+              </div>
+            </div>
           </div>
-          <h4>作者</h4>
-          <div className="ui bulleted list">
-            Erickson Juang
-          </div>
-          <h4>注意事項</h4>
+          <h3 className="ui header">更新資訊</h3>
+          <ul>
+
+            <li>
+
+                2015-09-10
+
+                <ul>
+
+                  <li>
+                      更新資料庫 （節戳時間為2015-09-09 22:38:53）
+                  </li>
+
+                  <li>
+                      衝堂提醒增加列出衝堂課名與時間
+                  </li>
+
+                  <li>
+                      課程資料增加上課地點
+                  </li>
+
+                  <li>
+                      課表中顯示課號與上課地點
+                  </li>
+
+                  <li>
+                      按下「Add」後，按鈕改為disabled
+                  </li>
+
+                  <li>
+                      更改UI文字
+                  </li>
+
+                  <li>
+                      統計已選學分數
+                  </li>
+
+                </ul>
+
+            </li>
+
+
+          </ul>
+
+          <h3 className="ui header">注意事項</h3>
           <div className="ui bulleted list">
             <div className="item">
               課程資訊僅供參考，實際資訊請參閱
@@ -108,7 +158,7 @@ var CourseSelection = React.createClass({
               。
             </div>
           </div>
-          <h4>使用的Framework</h4>
+          <h3 className="ui header">使用的Framework</h3>
           <div className="ui bulleted list">
             <div className="item">
               React 0.13.3
@@ -123,7 +173,7 @@ var CourseSelection = React.createClass({
               jQuery
             </div>
           </div>
-          <h4>原始碼與授權</h4>
+          <h3 className="ui header">原始碼與授權</h3>
           <div className="ui list">
             <div className="ui items">
               <div className="item">
@@ -210,6 +260,7 @@ var CourseTable = React.createClass({
         ],
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       },
+      creditCount: 0
     })
   },
   handleDaysChange: function(event) {
@@ -226,7 +277,9 @@ var CourseTable = React.createClass({
   refreshData: function(courseList) {
 
     var extendCourse = {}
+    var creditCount = 0
     courseList.map(function(element) {
+      creditCount += element.credit
       element.courseTime.map(function(value) {
         /* 若課表天數不夠，自動增加 */
         if( Math.floor(value / 100) > this.state.day ) {
@@ -244,7 +297,7 @@ var CourseTable = React.createClass({
         extendCourse[Math.floor(value / 100 - 1).toString()][(value % 100 - 1).toString()] = element;
       }.bind(this));
     }.bind(this));
-    this.setState({rawData: courseList, extendData: extendCourse});
+    this.setState({rawData: courseList, extendData: extendCourse, creditCount: creditCount});
   },
   componentWillReceiveProps: function(nextProps) {
     this.refreshData(nextProps.courseList);
@@ -312,24 +365,28 @@ var CourseTable = React.createClass({
         <div className="ui form">
           <div className="three fields">
             <div className="field">
-              <label>一週上課幾天？</label>
               <select defaultValue={this.state.day} className="ui dropdown daysOption">
                 {daysOption}
               </select>
+              <label>一週上課幾天？</label>
             </div>
             <div className="field">
-              <label>一天最多幾節課？</label>
               <select defaultValue={this.state.row} className="ui dropdown lessonsOption">
                 {lessonsOption}
               </select>
+              <label>一天最多幾節課？</label>
             </div>
-
             <div className="field">
               <div className="teal ui button generatingURL"
                 onClick={this.generatingURL}
                 data-content="匯出課表，下次可以由該網址繼續編輯。">產生網址</div>
             </div>
           </div>
+        </div>
+        <div className="ui green message">
+          <p>已選學分數：{this.state.creditCount}</p>
+          <p>一般生選課上限為25學分，符合資格者（如雙主修、輔系、跨學程領域等）上限為31學分</p>
+          <p>大一～大三生選課下限至少16學分，大四生至少9學分</p>
         </div>
 
 
@@ -417,7 +474,7 @@ var CourseTableDataField = React.createClass({
     }
   },
   handleDelete: function() {
-    this.props.handleDelete(this.props.course.uid);
+    this.props.handleDelete(this.props.course.courseUid);
   }
 });
 
