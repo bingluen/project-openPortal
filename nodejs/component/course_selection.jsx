@@ -257,8 +257,8 @@ var CourseTable = React.createClass({
       return (<option key={currentValue} value={currentValue}>{currentValue}</option>)
     }.bind(this));
 
-    var lessonsOption = [10, 11, 12, 13].map(function(currentValue) {
-      return (<option key={currentValue} value={currentValue}>{currentValue}</option>)
+    var lessonsOption = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(function(currentValue) {
+      return (<option key={currentValue} value={currentValue}>{currentValue} ({this.state.label.times[currentValue - 1].split('-')[1]}結束)</option>)
 
     }.bind(this));
 
@@ -398,7 +398,6 @@ var CourseTable = React.createClass({
 var CourseTableDataField = React.createClass({
   render: function() {
     if(this.props.course) {
-      console.log(this.props.fieldKey)
       return(
         <td>
           <div className="right aligned"><a href="#" onClick={this.handleDelete}><i className="close icon"></i></a></div>
@@ -570,6 +569,10 @@ var SearchForm = React.createClass({
       this.props.handleSubmit(keys);
     else
       $('form').addClass('error');
+
+    //reset all button
+    $('button[class="ui green basic button disabled"]').html('Add');
+    $('button[class="ui green basic button disabled"]').removeClass('disabled');
   },
   render: function() {
     var Department = this.props.department.map(function(element, index) {
