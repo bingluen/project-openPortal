@@ -51,7 +51,6 @@ var CourseSelection = React.createClass({
           .html('Added')
           .addClass('disabled')
         ;
-        console.log(button)
       }, 600);
     }
     setTimeout(function () {
@@ -79,7 +78,7 @@ var CourseSelection = React.createClass({
         </div>
         <div className="ui top attached secondary pointing menu">
           <a className="active item" data-tab="schedule">我的課表</a>
-          <a className="item" data-tab="search">Search</a>
+          <a className="item" data-tab="search">搜尋課程</a>
           <a className="item" data-tab="about">About</a>
         </div>
         <div className="ui bottom attached tab segment active content" data-tab="schedule">
@@ -94,6 +93,10 @@ var CourseSelection = React.createClass({
         <div className="ui bottom attached tab segment" data-tab="about">
           <div className="header">
             關於
+          </div>
+          <h4>作者</h4>
+          <div className="ui bulleted list">
+            Erickson Juang
           </div>
           <h4>注意事項</h4>
           <div className="ui bulleted list">
@@ -283,7 +286,7 @@ var CourseTable = React.createClass({
      *
      */
 
-    var rows =this.state.label.times.map(function (currentValue, RowIndex) {
+    var rows = this.state.label.times.map(function (currentValue, RowIndex) {
 
       if(RowIndex + 1 > this.state.row) return null;
       /**
@@ -294,7 +297,7 @@ var CourseTable = React.createClass({
        */
       fields = Array.apply(null, Array(this.state.day)).map(function(element, index) {
         if(this.state.extendData && this.state.extendData[index.toString()] && this.state.extendData[index.toString()][RowIndex.toString()])
-          return (<CourseTableDataField key={index + 1} course={this.state.extendData[index.toString()][RowIndex.toString()]} handleDelete={this.handleDelete} />)
+          return (<CourseTableDataField key={index + 1} course={this.state.extendData[index.toString()][RowIndex.toString()]} handleDelete={this.handleDelete} fieldKey={ (index + 1).toString() + ((RowIndex + 1) >= 10 ? (RowIndex + 1).toString() : '0' + (RowIndex + 1))} />)
         return (<CourseTableDataField key={index + 1} />)
       }.bind(this))
       fields.unshift(<td key={0} className="center aligned"><p key={0}>第 {RowIndex + 1} 節</p><p key={1}>{currentValue}</p></td>)
@@ -388,14 +391,26 @@ var CourseTable = React.createClass({
  * Course Name
  * Teacher Name
  * Time
+ * Classroom
+ * Class number (ex. A, B, C and etc.)
+ * Credit
  */
 var CourseTableDataField = React.createClass({
   render: function() {
     if(this.props.course) {
+      console.log(this.props.fieldKey)
       return(
         <td>
           <div className="right aligned"><a href="#" onClick={this.handleDelete}><i className="close icon"></i></a></div>
-          <p className="center aligned">{this.props.course.courseName}<br/>{this.props.course.teacherName}</p>
+          <p className="center aligned">
+            {this.props.course.courseCode + ' ' + this.props.course.classNumber}
+            <br/>
+            {this.props.course.courseName}
+            <br/>
+            {this.props.course.teacherName}
+            <br/>
+            {this.props.course.classroom[this.props.fieldKey]}
+          </p>
         </td>
       );
     } else {
@@ -469,6 +484,9 @@ var SearchCourse = React.createClass({
      * Course Name
      * Teacher Name
      * Time
+     * Classroom
+     * Class number (ex. A, B, C and etc.)
+     * Credit
      */
 
     //Pass to parent Node to add
@@ -477,7 +495,11 @@ var SearchCourse = React.createClass({
       courseCode:course.code,
       courseName:course.chinese_name,
       teacherName:course.teacher,
-      courseTime:course.time.split(',').map(function(element) { return parseInt(element) })
+      courseTime:course.time.split(',').map(function(element) { return parseInt(element) }),
+      classroom:course.classroom,
+      classNumber:course.class,
+      credit:course.credit
+
     }, button)
   },
   render: function() {
@@ -623,7 +645,6 @@ var SearchResult = React.createClass({
     var addButton = $(React.findDOMNode(this.refs['result-' + course.uid]));
     //load Animation
     addButton.addClass('loading');
-
     //pass to parent Node
     this.props.handleAdd(course, addButton);
   },
