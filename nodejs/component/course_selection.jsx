@@ -312,16 +312,16 @@ var CourseTable = React.createClass({
         <div className="ui form">
           <div className="three fields">
             <div className="field">
+              <label>一週上課幾天？</label>
               <select defaultValue={this.state.day} className="ui dropdown daysOption">
                 {daysOption}
               </select>
-              <label>Days per Week</label>
             </div>
             <div className="field">
+              <label>一天最多幾節課？</label>
               <select defaultValue={this.state.row} className="ui dropdown lessonsOption">
                 {lessonsOption}
               </select>
-              <label>Lessons per Day</label>
             </div>
 
             <div className="field">
