@@ -185,6 +185,21 @@ class CourseCatcher:
 					#class time
 					courseData['time'] = ', '.join(re.findall('([0-9]{3}) ', rowData[5].text, re.S))
 
+					#classroom
+					classroomPairString = re.sub('<[/]?span>', '', str(rowData[5].find('span'))).replace('<br/>', '\n').replace(' ', '')
+					classroomPair = {}
+					try:
+						for i in classroomPairString.split('\n'):
+							stringSplit = i.split(',')
+							classroomPair[stringSplit[0]] = stringSplit[1]
+						courseData['classroom'] = classroomPair
+					except IndexError as e:
+						print(courseData['chinese_name'])
+						print(e)
+						print(classroomPairString)
+						print(stringSplit)
+						courseData['classroom'] = ''
+
 					#teacher name
 					courseData['teacher'] = re.findall('[^()]*', rowData[6].text, re.S)[0]
 
@@ -199,6 +214,7 @@ class CourseCatcher:
 
 					#degree
 					courseData['degree'] = degree
+
 
 					courseList.append(courseData)
 			except KeyError as e:
