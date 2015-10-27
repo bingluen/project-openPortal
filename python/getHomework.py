@@ -22,22 +22,25 @@ class catchHomework:
 
     def __init__ (self, username, password):
         content = r.post(URL_LOGIN).text
-        ecoVIEWSTATEGENERATOR = re.findall('__VIEWSTATEGENERATOR id="__VIEWSTATEGENERATOR" value="([^"]*)"', content, re.S)
-        ecoVIEWSTATE = re.findall('__VIEWSTATE" id="__VIEWSTATE" value="([^"]*)"', content, re.S)
-        ecoEVENTVALIDATION = re.findall('__EVENTVALIDATION" id="__EVENTVALIDATION" value="([^"]*)"', content, re.S)
+        ecoVIEWSTATEGENERATOR = re.findall('id="__VIEWSTATEGENERATOR" value="([^"]*)"', content, re.S)
+        ecoVIEWSTATE = re.findall('__VIEWSTATE" id="__VIEWSTATE" value="([^"]*)"', content, re.S)[0]
+        ecoEVENTVALIDATION = re.findall('__EVENTVALIDATION" id="__EVENTVALIDATION" value="([^"]*)"', content, re.S)[0]
         self.postdata={
                 '__VIEWSTATE':ecoVIEWSTATE,
                 '__VIEWSTATEGENERATOR':ecoEVENTVALIDATION,
                 '__EVENTVALIDATION':ecoEVENTVALIDATION,
                 'Txt_UserID':username,
                 'Txt_Password':password,
-                'ibnSubmit':'\xe7\x99\xbb\xe5\x85\xa5'
+                'ibnSubmit':'\xE7\x99\xBB\xE5\x85\xA5'
                 }
+        ##print self.postdata
         ### do login
         login_result = r.post(URL_LOGIN, data=self.postdata, verify=False)
 
+
         ### connect portal homepage after login (because set cookie)
         content = r.get(URL_PORTAL_HOMEPAGE).text
+
 
         ### init data structure
         ### item of course list is
@@ -159,8 +162,18 @@ class catchHomework:
         download = r.get(URL_DOWNLOAD_ATTACH+'File_name='+attach['filename']+'&id='+attach['id']+'&type='+attach['type'])
         writeFile(attach['filename'], download.content)
 
+    def doing(self, year, semester):
+        self.getCourseHistory()
+        for course in self.courseList:
+            print type(course['year'])
+            print type(course['semester'])
+            print type(year)
+            if int(course['year']) == 104 and int(course['semester']) == 1:
+                print self.getHomework(course['pageID'])
+
 
 
 
 
 parser = catchHomework('', '')
+parser.doing(104, 1)
